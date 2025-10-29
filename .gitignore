@@ -1,0 +1,11 @@
+# Environment files
+.env
+
+# Ignore the specified notebook
+Single Cell Comment Reviewer 10_08_25-Duration of Status-Simpler.ipynb
+
+# Temporary analysis slices
+temp_*.txt
+
+# Project data outputs
+data/
