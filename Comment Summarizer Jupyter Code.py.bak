@@ -1,8 +1,10 @@
-﻿#!pip install python-dotenv
+# %%
+#!pip install python-dotenv
 
 #!pip install numpy
 #!pip install pandas
 
+# %%
 from openai import OpenAI
 import os
 
@@ -29,8 +31,9 @@ PAGE_SIZE = 250
 START_DATE = "2023-01-01"
 END_DATE = "2026-01-01"
 
+# %%
 # =======================
-# ðŸ“¦ Cell 1: Setup and Inputs
+# 📦 Cell 1: Setup and Inputs
 # =======================
 #For later - class/config objects and global variables
 import os
@@ -53,9 +56,9 @@ import mimetypes
 # Load environment variables from .env file
 #load_dotenv(find_dotenv(filename="apis.env"))
 
-#assert os.getenv("REGULATIONS_API_KEY"), "âŒ REGULATIONS_API_KEY not loaded!"
-#assert os.getenv("OPENAI_API_KEY"), "âŒ OPENAI_API_KEY not loaded!"
-#print("âœ… Environment variables loaded successfully.")
+#assert os.getenv("REGULATIONS_API_KEY"), "❌ REGULATIONS_API_KEY not loaded!"
+#assert os.getenv("OPENAI_API_KEY"), "❌ OPENAI_API_KEY not loaded!"
+#print("✅ Environment variables loaded successfully.")
 
 if client is None and open_ai_api_key:
     client = OpenAI(api_key=open_ai_api_key)
@@ -99,11 +102,11 @@ def log(msg):
     print(full_msg)
 
 # =======================
-# ðŸ“Œ Cell 2: Manual Attachment Downloader
+# 📌 Cell 2: Manual Attachment Downloader
 # =======================
 
 # =======================
-# ðŸ“‚ Updated: HTML-based Attachment Downloader with Parallel Comment Processing
+# 📂 Updated: HTML-based Attachment Downloader with Parallel Comment Processing
 # =======================
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -135,7 +138,7 @@ def scrape_attachments_from_html(comment_id):
 
         driver.quit()
     except Exception as e:
-        log(f"âŒ Failed to scrape attachments for {comment_id}: {e}")
+        log(f"❌ Failed to scrape attachments for {comment_id}: {e}")
         try:
             driver.quit()
         except:
@@ -156,16 +159,16 @@ def download_attachments_from_links(comment_id, links):
                 with open(path, "wb") as f:
                     f.write(r.content)
                 downloaded_exts.append(ext)
-                log(f"âœ… Downloaded from HTML scrape: {filename}")
+                log(f"✅ Downloaded from HTML scrape: {filename}")
             else:
-                log(f"âš ï¸ Attachment URL not downloadable (status {r.status_code}): {url}")
+                log(f"⚠️ Attachment URL not downloadable (status {r.status_code}): {url}")
         except Exception as e:
-            log(f"âŒ Failed to download attachment from HTML scrape: {e}")
+            log(f"❌ Failed to download attachment from HTML scrape: {e}")
     return downloaded_exts
 
 
 # =======================
-# âš™ï¸ Parallel Processing Helper for Comment IDs
+# ⚙️ Parallel Processing Helper for Comment IDs
 # =======================
 def process_comment_item(item):
     cid = item["id"]
@@ -196,7 +199,7 @@ def process_comment_item(item):
         try:
             WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         except TimeoutException:
-            log(f"âš ï¸ Timeout waiting for page body: {cid}")
+            log(f"⚠️ Timeout waiting for page body: {cid}")
 
         time.sleep(5)
 
@@ -223,11 +226,11 @@ def process_comment_item(item):
                     if main_text:
                         break
         except Exception as e:
-            log(f"âš ï¸ Structured comment block not found: {e}")
+            log(f"⚠️ Structured comment block not found: {e}")
 
         driver.quit()
     except Exception as e:
-        log(f"âŒ Error processing comment {cid}: {e}")
+        log(f"❌ Error processing comment {cid}: {e}")
         try:
             driver.quit()
         except:
@@ -284,7 +287,7 @@ def download_comment_catalog(docket_id, max_pages=MAX_PAGES, start_date=START_DA
     rows = []
 
     while page <= max_pages:
-        log(f"ðŸ”Ž Fetching page {page}")
+        log(f"🔎 Fetching page {page}")
         url = f"{API_BASE}/comments"
         params = {
             "filter[docketId]": docket_id,
@@ -302,12 +305,12 @@ def download_comment_catalog(docket_id, max_pages=MAX_PAGES, start_date=START_DA
             resp.raise_for_status()
             data = resp.json()
         except Exception as e:
-            log(f"âŒ API error on page {page}: {e}")
+            log(f"❌ API error on page {page}: {e}")
             break
 
         comments = data.get("data", [])
         if not comments:
-            log("âš ï¸ No more comments returned; stopping.")
+            log("⚠️ No more comments returned; stopping.")
             break
 
         with ThreadPoolExecutor(max_workers=5) as executor:
@@ -328,16 +331,16 @@ def download_comment_catalog(docket_id, max_pages=MAX_PAGES, start_date=START_DA
         for _, row in df.iterrows()
     }
 
-    log(f"âœ… Created in-memory map with {len(comment_id_to_submitter)} comment IDs.")
+    log(f"✅ Created in-memory map with {len(comment_id_to_submitter)} comment IDs.")
 
     summary_path = os.path.join(BASE_DIR, f"{docket_id}_summary.xlsx")
     df.to_excel(summary_path, index=False)
-    log(f"âœ… Saved summary to: {summary_path}")
+    log(f"✅ Saved summary to: {summary_path}")
 
 
 
 # =======================
-# ðŸ“„ Cell 4: Extract Text from PDFs (and DOCX and TXT) with Cleaning
+# 📄 Cell 4: Extract Text from PDFs (and DOCX and TXT) with Cleaning
 # =======================
 
 import re
@@ -408,15 +411,15 @@ def extract_attachment_texts():
             if cleaned_text.strip():
                 with open(output_path, "w", encoding="utf-8") as f:
                     f.write(cleaned_text)
-                log(f"âœ… Extracted: {fname}")
+                log(f"✅ Extracted: {fname}")
             else:
-                log(f"âš ï¸ Empty or unreadable: {fname}")
+                log(f"⚠️ Empty or unreadable: {fname}")
 
         except Exception as e:
-            log(f"âŒ Failed to extract {fname}: {e}")
+            log(f"❌ Failed to extract {fname}: {e}")
 
 # =======================
-# ðŸ”— Cell 5: Link Extracted Text Back to Summary
+# 🔗 Cell 5: Link Extracted Text Back to Summary
 # =======================
 
 def link_pdf_text_to_summary():
@@ -469,11 +472,11 @@ def link_pdf_text_to_summary():
     
     updated_xlsx = summary_xlsx.replace(".xlsx", "_with_pdfs.xlsx")
     df.to_excel(updated_xlsx, index=False)
-    log(f"ðŸ“Š Saved updated summary with attachment text links and stakeholder classification: {updated_xlsx}")
+    log(f"📊 Saved updated summary with attachment text links and stakeholder classification: {updated_xlsx}")
 
     # Optional: warn on missing text extractions
     missing = df[df["extracted_attachment_texts"] == ""]
-    log(f"âš ï¸ Comments with no extracted text: {len(missing)}")
+    log(f"⚠️ Comments with no extracted text: {len(missing)}")
 
 # =======================
 # Cell 5.1 Stakeholder Classification
@@ -519,7 +522,7 @@ Respond in JSON format with keys: major_stakeholder, stakeholder_name, stakehold
         )
         text = response.choices[0].message.content.strip()
         text = strip_code_fence(text)  # NEW: strip markdown code fences
-        print("ðŸ§  Raw GPT response:\n", text)
+        print("🧠 Raw GPT response:\n", text)
         parsed = json.loads(text)
         return (
             str(parsed.get("major_stakeholder", "")).strip().lower() == "yes",
@@ -527,11 +530,11 @@ Respond in JSON format with keys: major_stakeholder, stakeholder_name, stakehold
             parsed.get("stakeholder_type", "other")
         )
     except Exception as e:
-        log(f"âŒ GPT stakeholder classification failed for {submitter_name}: {e}")
+        log(f"❌ GPT stakeholder classification failed for {submitter_name}: {e}")
         return (False, submitter_name or "Unknown", "other")
 
 # ============================
-# ðŸ“‹ Cell 5.2: Summarize Major Stakeholder Comments
+# 📋 Cell 5.2: Summarize Major Stakeholder Comments
 # ============================
 
 import os
@@ -548,7 +551,7 @@ STAKEHOLDER_SUMMARY_XLSX = os.path.join(BASE_DIR, f"{DOCKET_ID}_major_stakeholde
 SUMMARY_PROMPT_TEMPLATE = (
     "You are a regulatory analyst reviewing public comments from major stakeholders.\n\n"
     "Here is the full text of a stakehold er's comment submission.\n\n"
-    "Please write a 3â€“5 sentence summary that captures the key concerns, positions, or themes raised in this comment.\n\n"
+    "Please write a 3–5 sentence summary that captures the key concerns, positions, or themes raised in this comment.\n\n"
     "Comment Text:\n{text}"
 )
 
@@ -570,15 +573,15 @@ def summarize_comment(text):
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        return f"âŒ GPT summarization failed: {e}"
+        return f"❌ GPT summarization failed: {e}"
 
 # === Main Function ===
 def summarize_major_stakeholders():
-    print("ðŸ“¥ Loading stakeholder-classified comments...")
+    print("📥 Loading stakeholder-classified comments...")
     df = pd.read_excel(SUMMARY_INPUT_XLSX)
 
     major_df = df[df["is_major_stakeholder"] == True].copy()
-    print(f"ðŸ” Found {len(major_df)} major stakeholder comments")
+    print(f"🔍 Found {len(major_df)} major stakeholder comments")
 
     summary_rows = []
     for _, row in major_df.iterrows():
@@ -597,7 +600,7 @@ def summarize_major_stakeholders():
                 except:
                     continue
 
-        print(f"ðŸ§  Summarizing comment {cid} from {name}...")
+        print(f"🧠 Summarizing comment {cid} from {name}...")
         summary = summarize_comment(full_text)
 
         summary_rows.append({
@@ -609,11 +612,12 @@ def summarize_major_stakeholders():
         })
 
     pd.DataFrame(summary_rows).to_excel(STAKEHOLDER_SUMMARY_XLSX, index=False)
-    print(f"âœ… Saved major stakeholder summaries to {STAKEHOLDER_SUMMARY_XLSX}")
+    print(f"✅ Saved major stakeholder summaries to {STAKEHOLDER_SUMMARY_XLSX}")
 
 
+# %%
 # ============================
-# ðŸ“‹ Build Canonical Themes (Simplified) â€” with debug preview
+# 📋 Build Canonical Themes (Simplified) — with debug preview
 # ============================
 
 import os
@@ -629,7 +633,7 @@ CANONICAL_THEMES_JSON = os.path.join(BASE_DIR, f"{DOCKET_ID}_canonical_themes.js
 # === Prompt Templates ===
 CANDIDATE_THEME_PROMPT = (
     "You are reviewing a major stakeholder's public comment in a federal rulemaking.\n\n"
-    "Extract a short list (3â€“6) of ISSUE THEMES. Each theme should be a short phrase (â‰¤5 words)\n"
+    "Extract a short list (3–6) of ISSUE THEMES. Each theme should be a short phrase (≤5 words)\n"
     "that could be used to group similar claims from different commenters. Examples: 'Visa duration limits', 'SEVIS tracking', 'Program change restrictions'.\n\n"
     "Return ONLY a JSON array of strings.\n"
     "Comment Text:\n{text}"
@@ -637,8 +641,8 @@ CANDIDATE_THEME_PROMPT = (
 
 MERGE_THEMES_PROMPT = (
     "You are consolidating issue themes from multiple major stakeholder submissions.\n\n"
-    "You will be given a list of candidate themes. Merge overlapping or synonymous ones, and produce a final canonical list of 10â€“20 themes.\n"
-    "Each canonical theme should be â‰¤5 words, consistent, and reusable for grouping.\n\n"
+    "You will be given a list of candidate themes. Merge overlapping or synonymous ones, and produce a final canonical list of 10–20 themes.\n"
+    "Each canonical theme should be ≤5 words, consistent, and reusable for grouping.\n\n"
     "Return ONLY a JSON array of strings.\n\n"
     "Candidate Themes:\n{themes}"
 )
@@ -661,11 +665,11 @@ def extract_candidate_themes(text: str):
         raw = resp.choices[0].message.content.strip()
         return json.loads(raw.strip('`').replace('json', '').strip())
     except Exception as e:
-        print(f"âŒ Theme extraction failed: {e}")
+        print(f"❌ Theme extraction failed: {e}")
         return []
 
 def build_canonical_themes(max_reviews: int = 10):
-    print("ðŸ“¥ Loading stakeholder-classified commentsâ€¦")
+    print("📥 Loading stakeholder-classified comments…")
     df = pd.read_excel(SUMMARY_INPUT_XLSX)
 
     major_df = df[df.get("is_major_stakeholder", False) == True].copy()
@@ -692,10 +696,10 @@ def build_canonical_themes(max_reviews: int = 10):
         if not preview:
             preview = "<EMPTY>"
 
-        print(f"\nðŸ§­ Major submission #{i}")
-        print(f"   â€¢ Stakeholder: {submitter}")
-        print(f"   â€¢ Comment ID: {comment_id}")
-        print(f"   â€¢ Preview (100 chars): {preview}")
+        print(f"\n🧭 Major submission #{i}")
+        print(f"   • Stakeholder: {submitter}")
+        print(f"   • Comment ID: {comment_id}")
+        print(f"   • Preview (100 chars): {preview}")
 
         text_paths = str(getattr(row, "extracted_attachment_texts", "")).split("; ")
         full_text = ""
@@ -707,21 +711,21 @@ def build_canonical_themes(max_reviews: int = 10):
                 except:
                     continue
 
-        # ðŸ‘‡ Add this single line right after building full_text:
+        # 👇 Add this single line right after building full_text:
         print(f"[{getattr(row, 'comment_id', 'UNKNOWN')}] looking for text in: {text_paths or '<none>'} | length={len(full_text)} | preview={full_text[:80]!r}")
 
 
         candidates = extract_candidate_themes(full_text)
-        print(f"   â€¢ Extracted themes: {len(candidates)}"
-              f"{'  âš ï¸ (ZERO THEMES)' if len(candidates) == 0 else ''}")
+        print(f"   • Extracted themes: {len(candidates)}"
+              f"{'  ⚠️ (ZERO THEMES)' if len(candidates) == 0 else ''}")
 
         # Optional: show the themes briefly (first 6) for spot-checking
         if candidates:
-            print(f"   â€¢ First themes: {', '.join(map(str, candidates[:6]))}")
+            print(f"   • First themes: {', '.join(map(str, candidates[:6]))}")
 
         all_candidates.extend(candidates)
 
-    print(f"\nðŸ“¦ Total candidate themes collected: {len(all_candidates)}")
+    print(f"\n📦 Total candidate themes collected: {len(all_candidates)}")
 
     # === Merge into canonical set ===
     merge_prompt = MERGE_THEMES_PROMPT.format(themes=json.dumps(all_candidates, indent=2))
@@ -738,19 +742,20 @@ def build_canonical_themes(max_reviews: int = 10):
         raw = resp.choices[0].message.content.strip()
         canonical_themes = json.loads(raw.strip('`').replace('json', '').strip())
     except Exception as e:
-        print(f"âŒ Canonical merge failed: {e}")
+        print(f"❌ Canonical merge failed: {e}")
         canonical_themes = []
 
     with open(CANONICAL_THEMES_JSON, "w", encoding="utf-8") as f:
         json.dump(canonical_themes, f, indent=2)
 
-    print(f"âœ… Wrote canonical themes â†’ {CANONICAL_THEMES_JSON} (n={len(canonical_themes)})")
+    print(f"✅ Wrote canonical themes → {CANONICAL_THEMES_JSON} (n={len(canonical_themes)})")
     return canonical_themes
 
 
+# %%
    
 # =======================
-# ðŸ§  Cell 6: Comment Deduplication & Template Grouping (Enhanced for Stakeholder and Importance Awareness)
+# 🧠 Cell 6: Comment Deduplication & Template Grouping (Enhanced for Stakeholder and Importance Awareness)
 # =======================
 
 import os
@@ -833,7 +838,7 @@ def merge_templates_into_summary(templates, reference_texts, assigned, comments)
     rows = []
     df = pd.read_excel(SUMMARY_WITH_PDFS_XLSX)
     if "submitter" not in df.columns:
-        log("âš ï¸ No submitter column found in summary. Adding placeholder.")
+        log("⚠️ No submitter column found in summary. Adding placeholder.")
         df["submitter"] = "Unknown"
 
     df["comment_id"] = df["comment_id"].astype(str)
@@ -872,11 +877,11 @@ def merge_templates_into_summary(templates, reference_texts, assigned, comments)
     template_df = pd.DataFrame(template_rows)
     merged = df.merge(template_df, left_on="comment_id", right_on="reference_comment_id", how="right")
     merged.to_excel(FINAL_OUTPUT_XLSX, index=False)
-    log(f"âœ… Final merged summary saved: {FINAL_OUTPUT_XLSX}")
+    log(f"✅ Final merged summary saved: {FINAL_OUTPUT_XLSX}")
 
     
 # ==========================
-# âœ¨ Cell 6.1: Comment_ID to submitter map
+# ✨ Cell 6.1: Comment_ID to submitter map
 # ==========================
 
 def build_comment_id_to_submitter_map(summary_xlsx_path):
@@ -907,12 +912,14 @@ def build_comment_id_to_submitter_map(summary_xlsx_path):
     return comment_id_to_submitter  
  
 
+# %%
 
 
+# %%
 # ============================
-# âœ¨ Cell 7: Extract Core Claims to Canonical Schema (1 row per claim)
-# âœ… Uses live-loaded canonical themes in the prompt
-# âœ… Minimal schema (no claim/justification) + keeps label for singletons
+# ✨ Cell 7: Extract Core Claims to Canonical Schema (1 row per claim)
+# ✅ Uses live-loaded canonical themes in the prompt
+# ✅ Minimal schema (no claim/justification) + keeps label for singletons
 # ============================
 
 import os
@@ -938,24 +945,24 @@ EXTRACTION_INSTRUCTION_TMPL = (
     "You are analyzing a public comment submitted to a federal agency during a rulemaking process.\n\n"
     "Use ONLY the text provided in this chunk. If there is no concrete policy ask/objection, return an empty array [].\n\n"
     "Task: extract structured policy feedback. For each DISTINCT policy issue in the text, return an object with:\n"
-    "- clusterable_claim: â‰¤12 words, start with 'Supports', 'Opposes', or 'Requests', followed by a clear policy action or requirement.\n"
+    "- clusterable_claim: ≤12 words, start with 'Supports', 'Opposes', or 'Requests', followed by a clear policy action or requirement.\n"
     "  Example: 'Opposes fixed four-year visa term' or 'Requests extension of grace period to 60 days'.\n"
     "  The object must describe the regulatory action or requirement itself (not the rationale or effect).\n"
     "  Avoid vague nouns like 'policy', 'rule', or 'proposal' unless the comment truly refers to the entire rule.\n"
     "  If no clear policy ask exists, set to 'Not stated.'\n"
     "- issue_theme: ONE EXACT string from the canonical list below, or 'Other'.\n"
-    "- source_quote: â‰¤250 characters of direct quote that best evidences the ask/stance.\n"
+    "- source_quote: ≤250 characters of direct quote that best evidences the ask/stance.\n"
     "- position: one of 'support' | 'oppose' | 'support with modifications' | 'request clarification' | 'not stated'.\n"
     "- importance: 'High' | 'Medium' | 'Low' based on novelty/clarity/specificity/relevance.\n"
-    "- label: â‰¤6 words, Title Case, that captures the core ask or stance (e.g., 'Oppose Four-Year Limit').\n"
-    "- summary: 2â€“3 sentences (plain language) summarizing the ask and its scope (no fluff, no invented facts).\n\n"
+    "- label: ≤6 words, Title Case, that captures the core ask or stance (e.g., 'Oppose Four-Year Limit').\n"
+    "- summary: 2–3 sentences (plain language) summarizing the ask and its scope (no fluff, no invented facts).\n\n"
     "Canonical issue themes (exact strings):\n{themes_json}\n\n"
     "Guidelines:\n"
     "- Split distinct policy issues; do not paraphrase canonical theme names; focus on the regulatory ask.\n"
     "- Keep clusterable_claim literal and embedding-friendly (short Verb + Object only).\n"
     "- Prefer canonical nouns when possible (e.g., 'visa term' instead of 'program duration').\n"
     "- label should be short and recognizable at a glance by policymakers.\n"
-    "- source_quote must be verbatim and â‰¤250 characters.\n"
+    "- source_quote must be verbatim and ≤250 characters.\n"
     "- Respond with ONLY valid JSON (an array of objects). No prose.\n"
 )
 
@@ -1002,7 +1009,7 @@ def parse_gpt_json(text):
     try:
         return json.loads(text)
     except json.JSONDecodeError as e:
-        print("âš ï¸ JSON parsing failed:", e)
+        print("⚠️ JSON parsing failed:", e)
         return []
 
 # --- Optional normalization helpers ---
@@ -1011,7 +1018,7 @@ def _clean(s):
     return (s or "").strip()
 def _norm_pos(s):
     s = _clean(s).lower()
-    return s if s in _ALLOWED_POS else s  # keep as-is if modelâ€™s a bit off; fix later if needed
+    return s if s in _ALLOWED_POS else s  # keep as-is if model’s a bit off; fix later if needed
 def _cap1(s):
     return s[:1].upper() + s[1:] if s else s
 
@@ -1025,10 +1032,10 @@ def extract_all_claims():
         with open(CANONICAL_THEMES_JSON_PATH, "r", encoding="utf-8") as f:
             _themes_list = json.load(f)
     except FileNotFoundError:
-        print(f"âš ï¸ Canonical themes file not found: {CANONICAL_THEMES_JSON_PATH}. Using empty list.")
+        print(f"⚠️ Canonical themes file not found: {CANONICAL_THEMES_JSON_PATH}. Using empty list.")
         _themes_list = []
     except Exception as e:
-        print(f"âš ï¸ Failed to load canonical themes: {e}. Using empty list.")
+        print(f"⚠️ Failed to load canonical themes: {e}. Using empty list.")
         _themes_list = []
 
     themes_json = json.dumps(_themes_list, indent=2)
@@ -1094,14 +1101,14 @@ def extract_all_claims():
                         # content (clusterable + human-facing)
                         "clusterable_claim": clusterable_claim,   # short, clusterable form
                         "label": label,                  # title-style label (used for singletons too)
-                        "summary": summary,              # 1â€“2 sentence claim summary
+                        "summary": summary,              # 1–2 sentence claim summary
 
                         # membership
                         "comment_ids": json.dumps([comment_attachment_id]),
                         "n_members": 1,
                         "parent_id": "",
 
-                        # clustering slots to be filled later (steps 2â€“4)
+                        # clustering slots to be filled later (steps 2–4)
                         "cluster_id_orig": "",
                         "cluster_id_final": "",
                         "theme_cluster_id_orig": "",
@@ -1161,9 +1168,10 @@ def extract_all_claims():
     df = df[canonical_cols + extras]
 
     df.to_excel(CLAIM_OUTPUT_XLSX, index=False)
-    print(f"âœ… Saved extracted claims to: {CLAIM_OUTPUT_XLSX}")
+    print(f"✅ Saved extracted claims to: {CLAIM_OUTPUT_XLSX}")
 
 
+# %%
 # ============================
 # Cell 8: Minimal, Explainable Pipeline
 #   Step 1: embed_claims(...)
@@ -1208,7 +1216,7 @@ def embed_claims(
       - output_index_xlsx: exact row order + minimal metadata
       - output_embeddings_npy: np.ndarray of embeddings aligned to the index sheet
     """
-    print("ðŸ“¥ Loading:", input_xlsx)
+    print("📥 Loading:", input_xlsx)
     df = pd.read_excel(input_xlsx)
 
     if text_col not in df.columns or theme_col not in df.columns:
@@ -1216,7 +1224,7 @@ def embed_claims(
 
     texts = df[text_col].fillna("").astype(str).tolist()
 
-    print(f"ðŸ§  Embedding {len(texts)} rows with {EMBED_MODEL}â€¦")
+    print(f"🧠 Embedding {len(texts)} rows with {EMBED_MODEL}…")
     client = _client(open_ai_api_key)
 
     vecs = []
@@ -1232,8 +1240,8 @@ def embed_claims(
     idx_df.to_excel(output_index_xlsx, index=False)
     np.save(output_embeddings_npy, E)
 
-    print(f"ðŸ’¾ Saved index to: {output_index_xlsx}")
-    print(f"ðŸ’¾ Saved embeddings to: {output_embeddings_npy}")
+    print(f"💾 Saved index to: {output_index_xlsx}")
+    print(f"💾 Saved embeddings to: {output_embeddings_npy}")
     return output_index_xlsx, output_embeddings_npy
 
 
@@ -1306,7 +1314,7 @@ def cluster_within_theme(
     Write a single Excel with columns:
       theme, cluster_id_orig, theme_cluster_id_orig, closest_centroid_clusters, cluster_size, cluster_exemplar, etc.
     """
-    print("ðŸ“¥ Loading:", index_xlsx, "and", embeddings_npy)
+    print("📥 Loading:", index_xlsx, "and", embeddings_npy)
     df = pd.read_excel(index_xlsx)
     E = np.load(embeddings_npy)
     assert len(df) == len(E), "index sheet and embeddings length mismatch"
@@ -1368,19 +1376,20 @@ def cluster_within_theme(
     df["cluster_exemplar"] = cluster_exemplar_all
     df["closest_centroid_clusters"] = closest_map_all
 
-    print("ðŸ’¾ Writing:", output_xlsx)
+    print("💾 Writing:", output_xlsx)
     df.to_excel(output_xlsx, index=False)
-    print("âœ… Saved per-theme clusters to:", output_xlsx)
+    print("✅ Saved per-theme clusters to:", output_xlsx)
     return output_xlsx
 
 
+# %%
 def meta_cluster_within_theme(
     clustered_xlsx: str,
     embeddings_npy: str,
     output_xlsx: str,
     theme_col: str = "issue_theme",
 ):
-    print("ðŸ“¥ Loading:", clustered_xlsx, "and", embeddings_npy)
+    print("📥 Loading:", clustered_xlsx, "and", embeddings_npy)
     df = pd.read_excel(clustered_xlsx)
     E = np.load(embeddings_npy)
     assert len(df) == len(E), "cluster sheet and embeddings length mismatch"
@@ -1434,7 +1443,7 @@ def meta_cluster_within_theme(
             theme_final[theme_labels == lbl] = remap[lbl]
         labels_final[idxs] = theme_final
 
-        # ---- promote â€œnoiseâ€ sentinel ids (>= SENTINEL_START) that now have size â‰¥ 2
+        # ---- promote “noise” sentinel ids (>= SENTINEL_START) that now have size ≥ 2
         SENTINEL_START = 100000
         counts = pd.Series(theme_final).value_counts()
         real_mask = theme_final < SENTINEL_START
@@ -1476,21 +1485,22 @@ def meta_cluster_within_theme(
     df["cluster_exemplar"] = cluster_exemplar
     df["closest_centroid_clusters"] = closest_map
 
-    print("ðŸ’¾ Writing:", output_xlsx)
+    print("💾 Writing:", output_xlsx)
     df.to_excel(output_xlsx, index=False)
-    print("âœ… Saved meta-clustered results (including singletons) to:", output_xlsx)
+    print("✅ Saved meta-clustered results (including singletons) to:", output_xlsx)
     return output_xlsx
 
 
+# %%
 # ---------- STEP 4: k-NN attach pass (within theme, after meta-clustering) ----------
 def attach_singletons_knn_within_theme(
     clustered_xlsx: str,            # output from Step 3 (meta_cluster_within_theme)
-    embeddings_npy: str,            # same embeddings array used in Steps 2â€“3
+    embeddings_npy: str,            # same embeddings array used in Steps 2–3
     output_xlsx: str,               # write updated labels + metadata here
     theme_col: str = "issue_theme",
     attach_threshold: float = 0.7, # cosine threshold to attach a singleton
     min_target_size: int = 2,       # only attach into clusters with size >= this
-    use_centroids: bool = True,     # True = singletonâ†’centroid; False = singletonâ†’nearest point
+    use_centroids: bool = True,     # True = singleton→centroid; False = singleton→nearest point
 ):
     """
     For each theme:
@@ -1504,12 +1514,12 @@ def attach_singletons_knn_within_theme(
     from sklearn.preprocessing import normalize
     from sklearn.metrics.pairwise import cosine_similarity
 
-    print("ðŸ“¥ Loading:", clustered_xlsx, "and", embeddings_npy)
+    print("📥 Loading:", clustered_xlsx, "and", embeddings_npy)
     df = pd.read_excel(clustered_xlsx)
     E = np.load(embeddings_npy)
     assert len(df) == len(E), "sheet and embeddings length mismatch"
 
-    # ---- Snapshot postâ€“meta-cluster labels for traceability ----
+    # ---- Snapshot post–meta-cluster labels for traceability ----
     if "cluster_id_meta" not in df.columns:
         df["cluster_id_meta"] = df["cluster_id_final"]
     if "theme_cluster_id_meta" not in df.columns:
@@ -1573,9 +1583,9 @@ def attach_singletons_knn_within_theme(
             Xa = X_t[target_rows_local]                    # (m, d)
             Xs = X_t[single_idx_local]                     # (s, d)
             sims = Xs @ Xa.T                               # (s, m)
-            # prevent self-match in the (rare) case a singletonâ€™s own label is also â€œeligibleâ€
+            # prevent self-match in the (rare) case a singleton’s own label is also “eligible”
             for r, i_loc in enumerate(single_idx_local):
-                # zero out its own column if it slipped in (shouldnâ€™t if size==1 and min_target_size>=2)
+                # zero out its own column if it slipped in (shouldn’t if size==1 and min_target_size>=2)
                 pass
             nn_j_local = sims.argmax(axis=1)
             best_sim = sims[np.arange(len(single_idx_local)), nn_j_local]
@@ -1594,7 +1604,7 @@ def attach_singletons_knn_within_theme(
 
         if changed:
             labels_final[idxs] = labels_t
-            print(f"ðŸ”— {theme}: attached {changed} singleton(s) to nearest clusters (â‰¥ {attach_threshold:.2f})")
+            print(f"🔗 {theme}: attached {changed} singleton(s) to nearest clusters (≥ {attach_threshold:.2f})")
 
     # Write updated labels back
     df["cluster_id_final"] = labels_final.astype(int)
@@ -1661,14 +1671,15 @@ def attach_singletons_knn_within_theme(
     df["cluster_exemplar"] = cluster_exemplar
     df["closest_centroid_clusters"] = closest_map
 
-    print("ðŸ’¾ Writing:", output_xlsx)
+    print("💾 Writing:", output_xlsx)
     df.to_excel(output_xlsx, index=False)
-    print("âœ… Saved k-NN attach results to:", output_xlsx)
+    print("✅ Saved k-NN attach results to:", output_xlsx)
     return output_xlsx
 
 
+# %%
 # ============================
-# ðŸ·ï¸ Cell 9: Cluster Labeling & Summarization (Schema v1, aligned)
+# 🏷️ Cell 9: Cluster Labeling & Summarization (Schema v1, aligned)
 # - Skips GPT for singletons (population-1 clusters and noise singletons)
 # - Uses only clusterable_claim/label/summary (no claim/justification)
 # - Adds summary_source: 'gpt-sampled' | 'passthrough-singleton' | 'passthrough-noise'
@@ -1693,14 +1704,14 @@ THEME_PROMPT_TEMPLATE = (
     "Each group below is a SAMPLE from a larger cluster of semantically similar claims.\n"
     "Your task is to:\n"
     "1) Provide a short, informative label that captures the central policy ask/stance (avoid rationale in the label).\n"
-    "2) Write a 2â€“3 sentence summary that generalizes across the sampled claims.\n"
+    "2) Write a 2–3 sentence summary that generalizes across the sampled claims.\n"
     "3) If the sample shows distinct sub-themes, add up to 3 short bullets.\n\n"
     "Rules:\n"
     "- Use only the provided sample; do NOT invent facts.\n"
     "- If coverage is limited, write a cautious summary.\n"
     "- Use EXACTLY this format (one label, one summary block):\n"
     "  Label: <short label>\n"
-    "  Summary: <2â€“3 sentences; optional bullets>\n\n"
+    "  Summary: <2–3 sentences; optional bullets>\n\n"
     "Sample size: {sample_size} of {cluster_size} (coverage: {cover_rate})\n\n"
     "Sampled structured data:\n\n"
     "{claims}"
@@ -1829,7 +1840,7 @@ def get_sampling_knobs(cluster_size: int):
 # ============================
 
 def summarize_clusters_sampled():
-    print("ðŸ“¥ Loading clustered claimsâ€¦", EMBEDDED_XLSX)
+    print("📥 Loading clustered claims…", EMBEDDED_XLSX)
     df = pd.read_excel(EMBEDDED_XLSX)
 
     # Required columns (aligned schema)
@@ -1887,7 +1898,7 @@ def summarize_clusters_sampled():
             seed=SAMPLE_SEED
         )
 
-        print(f"ðŸ§  Summarizing cluster {tcid} (sample {meta['sample_size']}/{meta['cluster_size']}, cov={meta['cover_rate']})")
+        print(f"🧠 Summarizing cluster {tcid} (sample {meta['sample_size']}/{meta['cluster_size']}, cov={meta['cover_rate']})")
         label, summary = parse_label_summary(run_gpt_theme_summary(sample_df, meta))
 
         closest_str = "; ".join(sorted(set(map(str, cluster_df["closest_centroid_clusters"].dropna().unique()))))
@@ -1965,92 +1976,127 @@ def summarize_clusters_sampled():
 
     out_df = pd.DataFrame(summary_rows)
     out_df.to_excel(THEME_SUMMARY_XLSX, index=False)
-    print(f"âœ… Saved cluster labels & summaries to {THEME_SUMMARY_XLSX}")
+    print(f"✅ Saved cluster labels & summaries to {THEME_SUMMARY_XLSX}")
 
 # How to run:
 # summarize_clusters_sampled()
 
 
+# %%
 
 
+# %%
 
 
+# %%
 download_comment_catalog(DOCKET_ID)
 
 
+# %%
 print("done")
 
+# %%
 
 
+# %%
 
 
+# %%
 extract_attachment_texts()
 
 
+# %%
 link_pdf_text_to_summary()
 
 
+# %%
 
 
+# %%
 # === Run the pipeline ===
 comments = load_comment_text()
 templates, reference_texts, assigned = deduplicate_comments(comments)
 merge_templates_into_summary(templates, reference_texts, assigned, comments)
 
+# %%
 
 
+# %%
 #summarize_major_stakeholders()
 
 
+# %%
 canonical_themes = build_canonical_themes(max_reviews=10)
 
 print("Canonical themes:")
 for theme in canonical_themes:
     print(" -", theme)
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 comment_id_to_submitter = build_comment_id_to_submitter_map(SUMMARY_WITH_PDFS_XLSX)
 extract_all_claims()
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 # Paths (adjust to your BASE_DIR/DOCKET_ID)
 INPUT_XLSX   = os.path.join(BASE_DIR, f"{DOCKET_ID}_core_claims.xlsx")
 
@@ -2073,6 +2119,7 @@ embed_claims(
 
 
 
+# %%
 # 2) Clustering within theme
 cluster_within_theme(
     index_xlsx=EMB_INDEX_XL,
@@ -2083,6 +2130,7 @@ cluster_within_theme(
 )
 
 
+# %%
 # 3) Meta-clustering within theme (merge near-duplicates)
 meta_cluster_within_theme(
     clustered_xlsx=CLUSTERS_XL,
@@ -2092,6 +2140,7 @@ meta_cluster_within_theme(
 )
 
 
+# %%
 # 4) K-NN clustering
 META_XL = os.path.join(BASE_DIR, f"{DOCKET_ID}_embedding_clusters_meta.xlsx")
 EMB_NPY = os.path.join(BASE_DIR, f"{DOCKET_ID}_embeddings.npy")
@@ -2102,29 +2151,38 @@ attach_singletons_knn_within_theme(
     embeddings_npy=EMB_NPY,
     output_xlsx=ATTACH_XL,
     theme_col="issue_theme",
-    attach_threshold=0.75,  # tune 0.70â€“0.75
+    attach_threshold=0.75,  # tune 0.70–0.75
     min_target_size=2,      # only attach into true clusters
     use_centroids=True      # switch to False to use nearest-point instead of centroid
 )
 
 
+# %%
 print("done")
 
+# %%
 
 
+# %%
 # === Run the function ===
 summarize_clusters_sampled()
 
+# %%
 #Also add a function to icnrease the number of claims reviewed as the order of magnitude of claims in each cluster increases
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
+# %%
 #Review clusters first by looking at clusters then at singletons.
 #add more detail to summaries
 
@@ -2150,10 +2208,13 @@ summarize_clusters_sampled()
 
 
 
+# %%
 
 
+# %%
 
 
+# %%
 
 
 
