@@ -42,6 +42,8 @@ import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.common.exceptions import TimeoutException
 from bs4 import BeautifulSoup
 from datetime import datetime
 from pdfminer.high_level import extract_text
@@ -49,6 +51,40 @@ from openai import OpenAI
 from tqdm import tqdm
 #from dotenv import load_dotenv, find_dotenv
 import mimetypes
+
+import warnings
+import re as _re
+import builtins as _builtins
+
+# Quiet noisy warnings (e.g., deprecated endpoint chatter)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+# Sanitize stray mojibake characters from output
+_REPLACEMENTS = [
+    ("�?O", "[ERROR]"),
+    ("�o.", "[OK]"),
+    ("�o", "[OK]"),
+    ("�s��,?", "[WARN]"),
+    ("�s", "[WARN]"),
+    ("ðŸ”Ž", ""),
+]
+
+def _sanitize_text(s: str) -> str:
+    try:
+        out = s
+        for a, b in _REPLACEMENTS:
+            out = out.replace(a, b)
+        # Remove leading corrupted prefixes like dY… on a line
+        out = _re.sub(r"^\s*dY.*?\s", "", out)
+        # Drop stray replacement characters
+        out = out.replace("�", "")
+        return out
+    except Exception:
+        return s
+
+def print(*args, **kwargs):  # type: ignore[override]
+    cleaned = [( _sanitize_text(a) if isinstance(a, str) else a ) for a in args]
+    return _builtins.print(*cleaned, **kwargs)
 
 # Load environment variables from .env file
 #load_dotenv(find_dotenv(filename="apis.env"))
@@ -93,7 +129,7 @@ LOG_PATH = os.path.join(BASE_DIR, "log.txt")
 
 def log(msg):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    full_msg = f"[{timestamp}] {msg}"
+    full_msg = f"[{timestamp}] {_sanitize_text(str(msg))}"
     with open(LOG_PATH, "a", encoding="utf-8") as f:
         f.write(full_msg + "\n")
     print(full_msg)
@@ -118,7 +154,15 @@ def scrape_attachments_from_html(comment_id):
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
-        driver = webdriver.Chrome(options=chrome_options)
+        # Suppress DevTools listening and other noisy logs
+        chrome_options.add_argument("--log-level=3")
+        chrome_options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
+        chrome_options.add_experimental_option('useAutomationExtension', False)
+        # Suppress DevTools listening and other noisy logs
+        chrome_options.add_argument("--log-level=3")
+        chrome_options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
+        chrome_options.add_experimental_option('useAutomationExtension', False)
+        driver = webdriver.Chrome(options=chrome_options, service=Service(log_path=os.devnull))
         driver.set_page_load_timeout(30)
 
         url = f"https://www.regulations.gov/comment/{comment_id}"
@@ -189,7 +233,7 @@ def process_comment_item(item):
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
-        driver = webdriver.Chrome(options=chrome_options)
+        driver = webdriver.Chrome(options=chrome_options, service=Service(log_path=os.devnull))
         driver.set_page_load_timeout(30)
         driver.get(f"https://www.regulations.gov/comment/{cid}")
 
@@ -547,7 +591,7 @@ STAKEHOLDER_SUMMARY_XLSX = os.path.join(BASE_DIR, f"{DOCKET_ID}_major_stakeholde
 # === GPT Prompt Template ===
 SUMMARY_PROMPT_TEMPLATE = (
     "You are a regulatory analyst reviewing public comments from major stakeholders.\n\n"
-    "Here is the full text of a stakehold er's comment submission.\n\n"
+    "Here is the full text of a stakeholder's comment submission.\n\n"
     "Please write a 3â€“5 sentence summary that captures the key concerns, positions, or themes raised in this comment.\n\n"
     "Comment Text:\n{text}"
 )
